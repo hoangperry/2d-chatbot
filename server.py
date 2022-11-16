@@ -41,27 +41,33 @@ async def javascript(request):
 
 
 async def offer(request):
-    params = await request.json()
-    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
+    params = await request.json()
+    print(params)
+    client_offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     pc = RTCPeerConnection()
     pc_id = "PeerConnection(%s)" % uuid.uuid4()
-    pcs.add(pc)
 
     def log_info(msg, *args):
         logger.info(pc_id + " " + msg, *args)
 
-    log_info("Created for %s", request.remote)
+    pcs.add(pc)
+    if params.get('text', '') == '':
+        media_player = MediaPlayer(os.path.join(ROOT, "example.mp4"))
+    else:
+        _, _, _, video_path = art.text_to_animation(params.get('text', ''))
+        media_player = MediaPlayer(os.path.join(ROOT, video_path))
 
-    # prepare local media
-    player = MediaPlayer(os.path.join(ROOT, "example.mp4"))
-    recorder = MediaBlackhole()
+    log_info("Created for %s", request.remote)
 
     @pc.on("datachannel")
     def on_datachannel(channel):
         @channel.on("message")
         def on_message(message):
+            print(message)
             if isinstance(message, str) and message.startswith("ping"):
+                channel.send("pong" + message[4:])
+            else:
                 channel.send("pong" + message[4:])
 
     @pc.on("connectionstatechange")
@@ -76,23 +82,13 @@ async def offer(request):
         log_info("Track %s received", track.kind)
 
         if track.kind == "audio":
-            pc.addTrack(player.audio)
-            recorder.addTrack(track)
+            pc.addTrack(media_player.audio)
         elif track.kind == "video":
-            pc.addTrack(
-                player.video
-            )
-            # if args.record_to:
-            #     recorder.addTrack(relay.subscribe(track))
-
-        @track.on("ended")
-        async def on_ended():
-            log_info("Track %s ended", track.kind)
-            await recorder.stop()
+            pc.addTrack(media_player.video)
 
     # handle offer
-    await pc.setRemoteDescription(offer)
-    await recorder.start()
+
+    await pc.setRemoteDescription(client_offer)
 
     # send answer
     answer = await pc.createAnswer()
@@ -114,12 +110,6 @@ async def on_shutdown(app):
 
 
 if __name__ == "__main__":
-    # if args.cert_file:
-    #     ssl_context = ssl.SSLContext()
-    #     ssl_context.load_cert_chain(args.cert_file, args.key_file)
-    # else:
-    #     ssl_context = None
-
     app = web.Application()
     app.router.add_get("/", index)
     app.router.add_get("/client.js", javascript)

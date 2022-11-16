@@ -83,6 +83,7 @@ class Artist:
                     out.write(character_pose[i[1].lower()])
                     current_time += frame_time
         out.release()
+
         if write_video:
             output_file = output_file if output_file is not None else self.character + '_' \
                                                                       + str(time.time()).replace('.', '_')
@@ -90,4 +91,4 @@ class Artist:
             os.system(cmd_ffmpeg)
         if clear_tmp:
             shutil.rmtree(tmp_dir)
-        return tmp_mp4, input_audio, tmp_dir
+        return tmp_mp4, input_audio, tmp_dir, output_file+'.mp4'
