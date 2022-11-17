@@ -21,6 +21,7 @@ def download_resource():
             google_drive_downloader(constant.tts_download_path, constant.tts_zip)
         with zipfile.ZipFile(constant.tts_zip, "r") as zip_ref:
             zip_ref.extractall('.')
+            os.rename('lipsync', 'res')
 
 
 if __name__ == '__main__':
