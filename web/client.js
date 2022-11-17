@@ -157,6 +157,17 @@ function start() {
 
     var constraints = {audio: true, video: true};
 
+    var resolution = document.getElementById('video-resolution').value;
+    if (resolution) {
+        resolution = resolution.split('x');
+        constraints.video = {
+            width: parseInt(resolution[0], 0),
+            height: parseInt(resolution[1], 0)
+        };
+    } else {
+        constraints.video = true;
+    }
+
     document.getElementById('media').style.display = 'block';
 
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
@@ -173,7 +184,16 @@ function start() {
 
 function send_message() {
     var constraints = {audio: true, video: true};
-
+    var resolution = document.getElementById('video-resolution').value;
+    if (resolution) {
+        resolution = resolution.split('x');
+        constraints.video = {
+            width: parseInt(resolution[0], 0),
+            height: parseInt(resolution[1], 0)
+        };
+    } else {
+        constraints.video = true;
+    }
     message = document.getElementById('chat-text').value;
 
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {

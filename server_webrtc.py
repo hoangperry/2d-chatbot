@@ -15,7 +15,7 @@ ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
-art = Artist(fps=30)
+art = Artist(fps=15)
 
 
 class VideoTransformTrack(MediaStreamTrack):

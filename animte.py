@@ -63,6 +63,14 @@ class Artist:
 
         for i in glob.glob(f'character/{self.character}/*.png'):
             character_img = cv2.imread(i)
+            scale_percent = 30  # percent of original size
+            width = int(character_img.shape[1] * scale_percent / 100)
+            height = int(character_img.shape[0] * scale_percent / 100)
+            dim = (width, height)
+
+            # resize image
+            resized = cv2.resize(character_img, dim, interpolation=cv2.INTER_AREA)
+
             character_pose[i.split('/')[-1].split('.')[0]] = character_img
             height, width, layers = character_img.shape
             size = (width, height)
