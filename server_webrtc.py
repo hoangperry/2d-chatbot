@@ -4,22 +4,20 @@ import logging
 import os
 import uuid
 from aiohttp import web
-
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 
 from animte import Artist
+from helper.utils import id_generator
 
 ROOT = os.path.dirname(__file__)
 
 logger = logging.getLogger("pc")
 pcs = set()
-relay = MediaRelay()
 art = Artist(fps=15)
 
 
 class VideoTransformTrack(MediaStreamTrack):
-    kind = "video"
     def __init__(self, track, transform):
         super().__init__()  # don't forget this!
         self.track = track
@@ -35,15 +33,19 @@ async def index(request):
     return web.Response(content_type="text/html", text=content)
 
 
+async def get_id(request):
+    new_id = id_generator()
+    return web.json_response({'id': new_id})
+
+
 async def javascript(request):
     content = open(os.path.join(ROOT, "web/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 
 async def offer(request):
-
     params = await request.json()
-    print(params)
+
     client_offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     pc = RTCPeerConnection()
     pc_id = "PeerConnection(%s)" % uuid.uuid4()
@@ -86,20 +88,26 @@ async def offer(request):
         elif track.kind == "video":
             pc.addTrack(media_player.video)
 
+        @track.on("ended")
+        async def on_ended():
+            await pc.close()
+
+
     # handle offer
 
     await pc.setRemoteDescription(client_offer)
-
     # send answer
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 
+    print(pc.localDescription.sdp)
     return web.Response(
         content_type="application/json",
         text=json.dumps(
             {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
         ),
     )
+
 
 
 async def on_shutdown(app):
@@ -112,6 +120,7 @@ async def on_shutdown(app):
 if __name__ == "__main__":
     app = web.Application()
     app.router.add_get("/", index)
+    app.router.add_get("/get_id", get_id)
     app.router.add_get("/client.js", javascript)
     app.router.add_post("/offer", offer)
     web.run_app(app, access_log=None, host='0.0.0.0', port=8080, ssl_context=None)

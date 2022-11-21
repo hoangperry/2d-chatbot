@@ -1,14 +1,19 @@
 // get DOM elements
-var dataChannelLog = document.getElementById('data-channel'),
-    iceConnectionLog = document.getElementById('ice-connection-state'),
-    iceGatheringLog = document.getElementById('ice-gathering-state'),
-    signalingLog = document.getElementById('signaling-state');
+function clear_log() {
+    document.getElementById('data-channel').innerHTML = ''
+}
+setInterval(clear_log, 3000);
 
-// peer connection
+var dataChannelLog = document.getElementById('data-channel');
 var pc = null;
-
 // data channel
-var dc = null, dcInterval = null;
+var dc = null, dcInterval = null, session_id = null;
+
+const session_id_gen = async () => {
+    const response = await fetch('/get_id');
+    const json_res = await response.json();
+    session_id = json_res;
+}
 
 function createPeerConnection() {
     var config = {
@@ -45,24 +50,12 @@ function negotiate(text) {
         });
     }).then(function() {
         var offer = pc.localDescription;
-        var codec;
-
-        codec = document.getElementById('audio-codec').value;
-        if (codec !== 'default') {
-            offer.sdp = sdpFilterCodec('audio', codec, offer.sdp);
-        }
-
-        codec = document.getElementById('video-codec').value;
-        if (codec !== 'default') {
-            offer.sdp = sdpFilterCodec('video', codec, offer.sdp);
-        }
-
-        document.getElementById('offer-sdp').textContent = offer.sdp;
         return fetch('/offer', {
             body: JSON.stringify({
+                text: text,
+                session_id: session_id,
                 sdp: offer.sdp,
-                type: offer.type,
-                video_transform: document.getElementById('video-transform').value
+                type: offer.type
             }),
             headers: {
                 'Content-Type': 'application/json'
@@ -84,24 +77,13 @@ function negotiateText(text) {
         return pc.setLocalDescription(offer);
     }).then(function() {
         var offer = pc.localDescription;
-        var codec;
-
-        codec = document.getElementById('audio-codec').value;
-        if (codec !== 'default') {
-            offer.sdp = sdpFilterCodec('audio', codec, offer.sdp);
-        }
-
-        codec = document.getElementById('video-codec').value;
-        if (codec !== 'default') {
-            offer.sdp = sdpFilterCodec('video', codec, offer.sdp);
-        }
 
         return fetch('/offer', {
             body: JSON.stringify({
                 text: text,
+                session_id: session_id,
                 sdp: offer.sdp,
-                type: offer.type,
-                video_transform: document.getElementById('video-transform').value
+                type: offer.type
             }),
             headers: {
                 'Content-Type': 'application/json'
@@ -118,6 +100,7 @@ function negotiateText(text) {
 }
 
 function start() {
+    session_id_gen();
     document.getElementById('start').style.display = 'none';
     pc = createPeerConnection();
 
@@ -156,18 +139,6 @@ function start() {
     };
 
     var constraints = {audio: true, video: true};
-
-    var resolution = document.getElementById('video-resolution').value;
-    if (resolution) {
-        resolution = resolution.split('x');
-        constraints.video = {
-            width: parseInt(resolution[0], 0),
-            height: parseInt(resolution[1], 0)
-        };
-    } else {
-        constraints.video = true;
-    }
-
     document.getElementById('media').style.display = 'block';
 
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
@@ -179,23 +150,18 @@ function start() {
         alert('Could not acquire media: ' + err);
     });
 
-    document.getElementById('stop').style.display = 'inline-block';
+    document.getElementById('chat-div').style.display = 'block';
 }
 
 function send_message() {
-    var constraints = {audio: true, video: true};
-    var resolution = document.getElementById('video-resolution').value;
-    if (resolution) {
-        resolution = resolution.split('x');
-        constraints.video = {
-            width: parseInt(resolution[0], 0),
-            height: parseInt(resolution[1], 0)
-        };
-    } else {
-        constraints.video = true;
-    }
-    message = document.getElementById('chat-text').value;
 
+
+    var constraints = {audio: true, video: true};
+    message = document.getElementById('chat-text').value;
+    constraints.video = {
+        width: 720,
+        height: 360
+    };
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
         return negotiateText(message);
     }, function(err) {
