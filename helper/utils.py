@@ -1,7 +1,13 @@
 import os
+import uuid
+import time
 import gdown
 import zipfile
 import helper.const as constant
+
+
+def id_generator():
+    return str(uuid.uuid4().hex) + str(time.time()).replace('.', '_')
 
 
 def google_drive_downloader(url, output):

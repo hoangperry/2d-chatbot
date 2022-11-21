@@ -2,3 +2,6 @@ aiohttp
 aiortc
 opencv-python
 gdown
+dialogflow
+hydra-core
+hydra-colorlog
