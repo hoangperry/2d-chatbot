@@ -40,7 +40,7 @@ def create_session():
 
 
 async def index(_):
-    content = open(os.path.join(ROOT, "web/index.html"), "r").read()
+    content = open(os.path.join(ROOT, "html/webrtc/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
 
@@ -50,7 +50,7 @@ async def get_id(_):
 
 
 async def javascript(_):
-    content = open(os.path.join(ROOT, "web/client.js"), "r").read()
+    content = open(os.path.join(ROOT, "html/webrtc/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 

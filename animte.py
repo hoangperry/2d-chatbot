@@ -46,6 +46,11 @@ class Artist:
         song = pydub.AudioSegment(y.tobytes(), frame_rate=sr, sample_width=2, channels=channels)
         song.export(f, format="wav", bitrate="320k")
 
+
+    def audio_to_visemes(self, audio_path):
+        pass
+
+
     def text_to_animation(self, text, output_file=None, write_video=True, clear_tmp=True):
         tmp_dir = 'tmp/' + str(time.time()).replace('.', '_')
         if not os.path.exists(tmp_dir):
