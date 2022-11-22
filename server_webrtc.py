@@ -1,19 +1,23 @@
 import asyncio
 import json
 import logging
+import hydra
 import os
 import uuid
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
+from aiortc.contrib.media import MediaPlayer
 
 from animte import Artist
 from helper.utils import id_generator
+from chatbot.session import GoogleDialogflowSession
 
 ROOT = os.path.dirname(__file__)
-
 logger = logging.getLogger("pc")
 pcs = set()
+global_config = None
+default_session = None
+
 chatbot_session = dict()
 art = Artist(fps=15)
 
@@ -29,22 +33,30 @@ class VideoTransformTrack(MediaStreamTrack):
         return frame
 
 
-async def index(request):
+def create_session():
+    global global_config
+    ss = GoogleDialogflowSession(global_config)
+    return ss
+
+
+async def index(_):
     content = open(os.path.join(ROOT, "web/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
 
-async def get_id(request):
+async def get_id(_):
     new_id = id_generator()
     return web.json_response({'id': new_id})
 
 
-async def javascript(request):
+async def javascript(_):
     content = open(os.path.join(ROOT, "web/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 
 async def offer(request):
+    default_s = True
+    global chatbot_session
     params = await request.json()
 
     client_offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
@@ -54,18 +66,19 @@ async def offer(request):
     def log_info(msg, *args):
         logger.info(pc_id + " " + msg, *args)
 
+    print(params.get('session_id'))
     if params.get('session_id', None) is not None:
-        media_player = MediaPlayer(os.path.join(ROOT, "example.mp4"))
+        if chatbot_session.get(params.get('session_id')['id']) is None:
+            new_session = create_session()
+            chatbot_session[params.get('session_id')['id']] = new_session
+        this_session = chatbot_session[params.get('session_id')['id']]
     else:
-
-        _, _, _, video_path = art.text_to_animation(params.get('text', ''))
-        media_player = MediaPlayer(os.path.join(ROOT, video_path))
-
+        this_session = default_session
     pcs.add(pc)
     if params.get('text', '') == '':
-        media_player = MediaPlayer(os.path.join(ROOT, "example.mp4"))
+        media_player = MediaPlayer(os.path.join(ROOT, "videos/hello.mp4"))
     else:
-        _, _, _, video_path = art.text_to_animation(params.get('text', ''))
+        _, _, _, video_path = art.text_to_animation(this_session.chat(params.get('text', '')))
         media_player = MediaPlayer(os.path.join(ROOT, video_path))
 
     log_info("Created for %s", request.remote)
@@ -100,9 +113,7 @@ async def offer(request):
         async def on_ended():
             await pc.close()
 
-
-    # handle offer
-
+    # Handle offer
     await pc.setRemoteDescription(client_offer)
     # send answer
     answer = await pc.createAnswer()
@@ -117,17 +128,26 @@ async def offer(request):
     )
 
 
-async def on_shutdown(app):
+async def on_shutdown(_):
     # close peer connections
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
     pcs.clear()
 
 
-if __name__ == "__main__":
+@hydra.main(version_base=None, config_path='config', config_name="dialogflow")
+def main(cfg):
+    global global_config, default_session
+    global_config = cfg
+
+    default_session = create_session()
     app = web.Application()
     app.router.add_get("/", index)
     app.router.add_get("/get_id", get_id)
     app.router.add_get("/client.js", javascript)
     app.router.add_post("/offer", offer)
     web.run_app(app, access_log=None, host='0.0.0.0', port=8080, ssl_context=None)
+
+
+if __name__ == "__main__":
+    main()

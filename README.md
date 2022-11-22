@@ -5,16 +5,13 @@
 `python3 server_webrtc.py`
 
 
-
-
-
-
-
 ## TODO
 
 - [X] 2D Render Engine
 - [x] WebRTC Streaming
+- [X] Chatbot session management
 - [x] Google Dialogflow Support
+- [ ] Web UI
 - [ ] Rasa Support
 - [ ] Dockerization
 - [ ] Render Queue
