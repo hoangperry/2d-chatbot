@@ -14,6 +14,7 @@ ROOT = os.path.dirname(__file__)
 
 logger = logging.getLogger("pc")
 pcs = set()
+chatbot_session = dict()
 art = Artist(fps=15)
 
 
@@ -52,6 +53,13 @@ async def offer(request):
 
     def log_info(msg, *args):
         logger.info(pc_id + " " + msg, *args)
+
+    if params.get('session_id', None) is not None:
+        media_player = MediaPlayer(os.path.join(ROOT, "example.mp4"))
+    else:
+
+        _, _, _, video_path = art.text_to_animation(params.get('text', ''))
+        media_player = MediaPlayer(os.path.join(ROOT, video_path))
 
     pcs.add(pc)
     if params.get('text', '') == '':
@@ -107,7 +115,6 @@ async def offer(request):
             {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
         ),
     )
-
 
 
 async def on_shutdown(app):
