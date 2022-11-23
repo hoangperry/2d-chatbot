@@ -1,5 +1,6 @@
 import os
 import io
+import json
 import shutil
 import base64
 import numpy as np
@@ -58,8 +59,8 @@ def generate_audio_and_visemes(text: str) -> (np.ndarray, dict):
     write_wav(audio_file, np_audio)
 
     # Create dialog file
-    with open('dialog.txt', mode='w', encoding='utf-8') as tmp_file:
-        tmp_file.write(input_text)
+    with open(text_file, mode='w', encoding='utf-8') as tmp_file:
+        tmp_file.write(text)
 
     visemes, success = predict_visemes_from_file(audio_file, text_file)
     # Clear temporary file
@@ -67,7 +68,7 @@ def generate_audio_and_visemes(text: str) -> (np.ndarray, dict):
 
     if not success:
         return np_audio, None
-    return np_audio, visemes
+    return np_audio, json.loads(visemes)
 
 
 def np_to_base64(audio):

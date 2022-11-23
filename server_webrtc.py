@@ -109,9 +109,9 @@ async def offer(request):
         elif track.kind == "video":
             pc.addTrack(media_player.video)
 
-        @track.on("ended")
-        async def on_ended():
-            await pc.close()
+        # @track.on("ended")
+        # async def on_ended():
+        #     await pc.close()
 
     # Handle offer
     await pc.setRemoteDescription(client_offer)

@@ -34,7 +34,7 @@ def generate_cli(audio_path, dialog_path):
     if dialog_path is not None:
         visemes_gen_command += ['-d', dialog_path]
     # Set data frame rate
-    visemes_gen_command += ['--datFrameRate', DATA_FRAME_RATE]
+    visemes_gen_command += ['--datFrameRate', str(DATA_FRAME_RATE)]
     # Assign output format
     visemes_gen_command += ['-f', OUTPUT_FORMAT]
 
