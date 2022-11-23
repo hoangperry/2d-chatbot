@@ -1,4 +1,4 @@
-import os
+from engine.speech import generate_audio_and_visemes
 
 
 class HIHIEngine:

@@ -1,5 +1,7 @@
 import os
+import io
 import shutil
+import base64
 import numpy as np
 
 from scipy.io.wavfile import write
@@ -68,9 +70,19 @@ def generate_audio_and_visemes(text: str) -> (np.ndarray, dict):
     return np_audio, visemes
 
 
+def np_to_base64(audio):
+    byte_io_file = io.BytesIO()
+    write(byte_io_file, SAMPLE_RATE, audio)
+    img_byte = byte_io_file.getvalue()
+    return base64.b64encode(img_byte).decode()
+
+
 if __name__ == '__main__':
     input_text = 'Chào các bạn hihi'
     # print(type(text_to_speech('123')))
-    write_wav('123123123/alo123.wav', text_to_speech(input_text))
-    with open('dialog.txt', mode='w', encoding='utf-8') as ff:
-        ff.write(input_text)
+    # write_wav('123123123/alo123.wav', text_to_speech(input_text))
+    # with open('dialog.txt', mode='w', encoding='utf-8') as ff:
+    #     ff.write(input_text)
+
+    new_audio = text_to_speech(input_text)
+    print(np_to_base64(new_audio))
