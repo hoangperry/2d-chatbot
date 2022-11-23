@@ -4,6 +4,8 @@
 ## Usage
 `python3 server_webrtc.py`
 
+![alt text](img/example.jpg)
+
 
 ## TODO
 
