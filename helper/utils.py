@@ -3,11 +3,25 @@ import uuid
 import time
 import gdown
 import zipfile
+# import logging
 import helper.const as constant
 
+from pathlib import Path
 
-def id_generator():
-    return str(uuid.uuid4().hex) + str(time.time()).replace('.', '_')
+
+def id_generator(simple=False):
+    if not simple:
+        return str(uuid.uuid4().hex) + str(time.time()).replace('.', '')
+    return str(uuid.uuid4().hex)
+
+
+def ensure_dir(to_create_directory):
+    try:
+        Path(to_create_directory).mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        print(e)
+        return 1
+    return 0
 
 
 def google_drive_downloader(url, output):

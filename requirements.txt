@@ -5,3 +5,6 @@ gdown
 dialogflow
 hydra-core
 hydra-colorlog
+numpy
+scipy
+pydub
