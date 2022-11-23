@@ -11,6 +11,7 @@
 - [x] WebRTC Streaming
 - [X] Chatbot session management
 - [x] Google Dialogflow Support
+- [ ] Client-side render support
 - [ ] Web UI
 - [ ] Rasa Support
 - [ ] Dockerization
