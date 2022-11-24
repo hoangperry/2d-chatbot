@@ -3,6 +3,8 @@ import io
 import json
 import shutil
 import base64
+import time
+
 import numpy as np
 
 from scipy.io.wavfile import write
@@ -52,7 +54,9 @@ def write_wav(output_file, audio_array, sample_rate=None):
 
 
 def generate_audio_and_visemes(text: str) -> (np.ndarray, dict):
+    st_time = time.time()
     np_audio = text_to_speech(text)
+    tts_ex_time = time.time() - st_time
     tmp_directory = 'tmp/' + id_generator(True)
     audio_file = f'{tmp_directory}/tts-audio.wav'
     text_file = f'{tmp_directory}/dialog.txt'
@@ -62,13 +66,15 @@ def generate_audio_and_visemes(text: str) -> (np.ndarray, dict):
     with open(text_file, mode='w', encoding='utf-8') as tmp_file:
         tmp_file.write(text)
 
+    visemes_time = time.time()
     visemes, success = predict_visemes_from_file(audio_file, text_file)
+    visemes_time = time.time() - visemes_time
     # Clear temporary file
     shutil.rmtree(tmp_directory)
 
     if not success:
         return np_audio, None
-    return np_audio, json.loads(visemes)
+    return np_audio, json.loads(visemes), (tts_ex_time, visemes_time)
 
 
 def np_to_base64(audio):

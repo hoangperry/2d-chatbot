@@ -52,10 +52,11 @@ async def gen_audio(request: Request):
     if this_session is None:
         this_session = GoogleDialogflowSession(dialogflow_config)
         session_manager[cb_session_id] = this_session
-
+    chat_bot_st_time = time.time()
     cb_response = this_session.chat(text=requested_text)
+    chat_bot_st_time = time.time() - chat_bot_st_time
 
-    audio, visemes = generate_audio_and_visemes(cb_response)
+    audio, visemes, tts_visemes_ex_time = generate_audio_and_visemes(cb_response)
     if visemes is None:
         visemes = dict()
 
@@ -63,7 +64,12 @@ async def gen_audio(request: Request):
     visemes = [[i['start'], i['value']] for i in visemes['mouthCues']]
     print(f'Responded in {time.time() - st_time}')
     return {
-        'time_process': time.time() - st_time,
+        'time_process': {
+            'total': time.time() - st_time,
+            'chatbot': chat_bot_st_time,
+            'tts': tts_visemes_ex_time[0],
+            'visemes': tts_visemes_ex_time[1],
+        },
         'text': cb_response,
         'visemes': visemes,
         'audio': np_to_base64(audio),

@@ -83,12 +83,9 @@ function setAnimation() {
                 $("#characterAnimated").attr("src", visemesAsset[curVisemes]);
             }
         }
-
         $("#PlayerTimer").html('Time: ' + parseFloat(crTime));
-        console.log(crTime + ' : ' + curVisemes);
     } catch {
         if (curVisemes !== 'X'){
-            console('BUG BUG BUG BUG');
             curVisemes = 'X';
             $("#characterAnimated").attr("src", visemesAsset['X']);
         }

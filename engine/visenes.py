@@ -4,10 +4,10 @@ import subprocess
 import numpy as np
 
 
-DATA_FRAME_RATE = 30
+DATA_FRAME_RATE = 10
 # pocketSphinx is a open source for English recordings, `phonetic` use for non-English recordings
 RECOGNIZER_LIST = ['pocketSphinx', 'phonetic']
-LANGUAGE = 'en'
+LANGUAGE = 'vi'
 
 # GHX for use all G H and X Shape
 EXTEND_SHAPE = "GHX"
@@ -37,11 +37,13 @@ def generate_cli(audio_path, dialog_path):
     visemes_gen_command += ['--datFrameRate', str(DATA_FRAME_RATE)]
     # Assign output format
     visemes_gen_command += ['-f', OUTPUT_FORMAT]
+    visemes_gen_command += ['--threads', '32']
 
     return visemes_gen_command
 
 
 def predict_visemes_from_file(audio_path, dialog_path):
+
     command_response = subprocess.run(
         generate_cli(audio_path, dialog_path),
         capture_output=True,
