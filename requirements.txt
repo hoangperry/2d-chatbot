@@ -11,3 +11,4 @@ pydub
 uvicorn
 fastapi
 starlette
+hydra

@@ -50,6 +50,7 @@ var visemesList = null, curPos = 0, curVisemes = 'X';
 
 
 function sendMessage() {
+    var session_id = $("#session_id").val()
     var messageText = $("#chatText").val()
     console.log("Client send: " + messageText);
     var settings = {

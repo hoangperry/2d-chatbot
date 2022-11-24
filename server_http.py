@@ -2,6 +2,10 @@ import os
 import time
 import uvicorn
 
+from config.config import dialogflow_config
+from helper.utils import id_generator
+from chatbot.management import SessionManagement
+from chatbot.session import GoogleDialogflowSession
 from engine.speech import generate_audio_and_visemes, np_to_base64
 
 from pathlib import Path
@@ -29,6 +33,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+session_manager = SessionManagement()
 
 
 @app.get("/health_check")
@@ -37,9 +42,20 @@ async def root():
 
 
 @app.post("/audio")
-def gen_audio(text: str):
+async def gen_audio(request: Request):
     st_time = time.time()
-    audio, visemes = generate_audio_and_visemes(text)
+    req = await request.json()
+    requested_text = req.get("text", "")
+    cb_session_id = req.get("id", "")
+
+    this_session = session_manager.get(cb_session_id, None)
+    if this_session is None:
+        this_session = GoogleDialogflowSession(dialogflow_config)
+        session_manager[cb_session_id] = this_session
+
+    cb_response = this_session.chat(text=requested_text)
+
+    audio, visemes = generate_audio_and_visemes(cb_response)
     if visemes is None:
         visemes = dict()
 
@@ -48,7 +64,7 @@ def gen_audio(text: str):
     print(f'Responded in {time.time() - st_time}')
     return {
         'time_process': time.time() - st_time,
-        'text': text,
+        'text': cb_response,
         'visemes': visemes,
         'audio': np_to_base64(audio),
     }
@@ -61,9 +77,9 @@ def root(request: Request) -> _TemplateResponse:
     """
     return TEMPLATES.TemplateResponse(
         "index.html",
-        {"request": request},
+        {"request": request, 'session_id': id_generator()},
     )
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("server_http:app", host="0.0.0.0", port=8000, reload=True)
