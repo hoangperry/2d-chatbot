@@ -1,7 +1,6 @@
 import logging
 from abc import ABC, abstractmethod, ABCMeta
 
-import google.cloud.dialogflow_v2 as dialogflow
 import hydra
 from google.oauth2 import service_account
 from omegaconf import DictConfig

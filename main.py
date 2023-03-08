@@ -1,18 +1,13 @@
-import hydra
 from animte import Artist
-from chatbot.session import GoogleDialogflowSession
 
 
-@hydra.main(version_base=None, config_path='config', config_name="dialogflow")
-def main(cfg):
-    # art = Artist(fps=30)
-    # art.text_to_animation(
-    #     'Chào bạn'
-    # )
-
-    a = GoogleDialogflowSession(cfg)
-    print(a)
-    print(a.chat('Hello bạn'))
+def main():
+    art = Artist(fps=120, character='science-1')
+    reuslt = art.audio_to_video('news/tin-kinh-te-08-03-2023.wav', fps=120)
+    print(reuslt)
+    # a = GoogleDialogflowSession(cfg)
+    # print(a)
+    # print(a.chat('Hello bạn'))
 
 
 if __name__ == '__main__':

@@ -8,9 +8,9 @@ import shutil
 
 import numpy as np
 
-from vietTTS.hifigan.mel2wave import mel2wave
-from vietTTS.nat.text2mel import text2mel
-from vietTTS import nat_normalize_text
+# from vietTTS.hifigan.mel2wave import mel2wave
+# from vietTTS.nat.text2mel import text2mel
+# from vietTTS import nat_normalize_text
 
 from shlex import quote as shlex_quote
 
@@ -46,10 +46,72 @@ class Artist:
         song = pydub.AudioSegment(y.tobytes(), frame_rate=sr, sample_width=2, channels=channels)
         song.export(f, format="wav", bitrate="320k")
 
+    @staticmethod
+    def audio_to_visemes(audio_path):
+        tmp_dir = 'tmp/' + str(time.time()).replace('.', '_')
+        if not os.path.exists(tmp_dir):
+            os.makedirs(tmp_dir)
 
-    def audio_to_visemes(self, audio_path):
-        pass
+        rhubard_command = f'./controller {audio_path} -r phonetic --datFrameRate 60 -f json -o {tmp_dir}/shape.json'
+        os.system(rhubard_command)
+        data = json.load(open(f"{tmp_dir}/shape.json"))
+        data = [[i['end'], i['value']] for i in data['mouthCues']]
 
+        shutil.rmtree(tmp_dir)
+        return data
+
+    def audio_to_video(self, audio_path, output_file=None, fps=60, write_video=True, clear_tmp=True):
+        tmp_dir = 'tmp/' + str(time.time()).replace('.', '_')
+        if not os.path.exists(tmp_dir):
+            os.makedirs(tmp_dir)
+
+        rhubard_command = f'./controller {audio_path} -r phonetic --datFrameRate {fps} -f json -o {tmp_dir}/shape.json'
+        os.system(rhubard_command)
+        data = json.load(open(f"{tmp_dir}/shape.json"))
+        data = [[i['end'], i['value']] for i in data['mouthCues']]
+
+        character_pose = dict()
+        size = None
+
+        for i in glob.glob(f'character/{self.character}/*.png'):
+            character_img = cv2.imread(i)
+            scale_percent = 30  # percent of original size
+            width = int(character_img.shape[1] * scale_percent / 100)
+            height = int(character_img.shape[0] * scale_percent / 100)
+            dim = (width, height)
+
+            # resize image
+            resized = cv2.resize(character_img, dim, interpolation=cv2.INTER_AREA)
+
+            character_pose[i.split('/')[-1].split('.')[0]] = character_img
+            height, width, layers = character_img.shape
+            size = (width, height)
+
+        if size is None:
+            raise Exception('Not found Character')
+
+        tmp_mp4 = f'{tmp_dir}/project.mp4'
+        out = cv2.VideoWriter(tmp_mp4, cv2.VideoWriter_fourcc(*'mp4v'), self.fps, size)
+        frame_time = 1 / self.fps
+        current_time = 0
+
+        for i in data:
+            while True:
+                if current_time > float(i[0]):
+                    break
+                else:
+                    out.write(character_pose[i[1].lower()])
+                    current_time += frame_time
+        out.release()
+
+        if write_video:
+            output_file = output_file if output_file is not None else self.character + '_' \
+                                                                      + str(time.time()).replace('.', '_')
+            cmd_ffmpeg = f'ffmpeg -i {tmp_mp4} -i {audio_path} -map 0 -codec:v mpeg4 -map 1:a -c:v copy -shortest {output_file}.mp4'
+            os.system(cmd_ffmpeg)
+        if clear_tmp:
+            shutil.rmtree(tmp_dir)
+        return tmp_mp4, audio_path, tmp_dir, output_file+'.mp4'
 
     def text_to_animation(self, text, output_file=None, write_video=True, clear_tmp=True):
         tmp_dir = 'tmp/' + str(time.time()).replace('.', '_')
